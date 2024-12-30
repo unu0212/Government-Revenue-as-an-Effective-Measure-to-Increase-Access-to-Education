@@ -1,0 +1,911 @@
+-------------------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  /Users/unubatsuuri/Desktop/eco375_project/Group20.log
+  log type:  text
+ opened on:  28 Nov 2023, 23:01:23
+
+. 
+. use Group_20.dta
+
+. ssc install estout
+checking estout consistency and verifying not already installed...
+all files already exist and are up to date.
+
+. 
+. 
+. 
+. 
+. keep if state != "united states"
+(23 observations deleted)
+
+. generate rest_exp = total_expenditure - expenditure_education
+
+. 
+. keep state year total_revenue expenditure_education total_expenditure rest_exp debt_at_end_of_fiscal_year e
+> xpenditure_public_welfare
+
+. 
+. gen red_state = inlist(state, "alabama", "alaska", "arkansas", "idaho", "indiana") | inlist(state, "kansas"
+> , "kentucky", "louisiana", "mississippi", "missouri") |inlist(state, "montanta", "nebraska", "north dakota"
+> , "oklahoma", "south carolina", "south dakota", "tennessee") | inlist(state, "texas", "utah", "west virgini
+> a", "wyoming")
+
+. 
+. egen state_cat = group(state)
+
+. 
+. gen red_state_rev = red_state * total_revenue
+
+. 
+. gen log_edu = log(expenditure_education)
+
+. 
+. gen log_rev = log(total_revenue)
+
+. 
+. gen log_rest_exp = log(rest_exp)
+
+. 
+. gen log_debt = log(debt_at_end_of_fiscal_year)
+
+. 
+. gen log_redinter = red_state * log_rev
+
+. 
+. gen rest_exp_welfare = total_expenditure - expenditure_public_welfare
+
+. 
+. gen log_public = log(expenditure_public_welfare)
+
+. 
+. gen log_rest_welfare = log(rest_exp_welfare)
+
+. describe
+
+Contains data from Group_20.dta
+ Observations:         1,350                  
+    Variables:            19                  30 Jun 2020 19:22
+-------------------------------------------------------------------------------------------------------------
+Variable      Storage   Display    Value
+    name         type    format    label      Variable label
+-------------------------------------------------------------------------------------------------------------
+state           str14   %-9s                  
+year            double  %10.0g                
+total_revenue   double  %10.0g                
+total_expendi~e double  %10.0g                
+expenditure_e~n double  %10.0g                
+expenditure_p~e double  %10.0g                
+debt_at_end_o~r double  %10.0g                
+rest_exp        float   %9.0g                 
+red_state       float   %9.0g                 
+state_cat       float   %9.0g                 group(state)
+red_state_rev   float   %9.0g                 
+log_edu         float   %9.0g                 
+log_rev         float   %9.0g                 
+log_rest_exp    float   %9.0g                 
+log_debt        float   %9.0g                 
+log_redinter    float   %9.0g                 
+rest_exp_welf~e float   %9.0g                 
+log_public      float   %9.0g                 
+log_rest_welf~e float   %9.0g                 
+-------------------------------------------------------------------------------------------------------------
+Sorted by: 
+     Note: Dataset has changed since last saved.
+
+. 
+. 
+. 
+. xtset state_cat year
+
+Panel variable: state_cat (strongly balanced)
+ Time variable: year, 1992 to 2018
+         Delta: 1 unit
+
+. /*reg  expenditure_education total_revenue, robust
+> xtreg expenditure_education total_revenue i.state_cat, fe robust
+> xtreg expenditure_education total_revenue i.state_cat, fe robust
+> xtreg expenditure_education total_revenue i.state_cat i.year, fe robust
+> xtreg expenditure_education total_revenue , fe cluster(state_cat)*/
+. 
+. twoway lfit expenditure_education total_revenue || scatter expenditure_education total_revenue,xlabel(1.00e
+> +08 "10" 2.00e+08 "20" 3.00e+08 "30" 4.00e+08 "40") ylabel(2.00e+07 "2" 4.00e+07 "4" 6.00e+07 "6" 8.00e+07 
+> "8" 1.00e+08 "10" )  xtitle("Total Revenue") ytitle("Education Expenditure") note("Values are expressed in 
+> billions of USD")
+
+. 
+. 
+. eststo spec1: reg  expenditure_education total_revenue, robust
+
+Linear regression                               Number of obs     =      1,350
+                                                F(1, 1348)        =    2558.44
+                                                Prob > F          =     0.0000
+                                                R-squared         =     0.9299
+                                                Root MSE          =     3.0e+06
+
+-------------------------------------------------------------------------------
+              |               Robust
+expenditure~n | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+--------------+----------------------------------------------------------------
+total_revenue |   .2595159   .0051307    50.58   0.000     .2494509     .269581
+        _cons |   929742.7   116815.5     7.96   0.000     700582.7     1158903
+-------------------------------------------------------------------------------
+
+. estadd local hasteffect "No"
+
+added macro:
+         e(hasteffect) : "No"
+
+. estadd local haseffect "No"
+
+added macro:
+          e(haseffect) : "No"
+
+. estadd local hasCSt "No"
+
+added macro:
+             e(hasCSt) : "No"
+
+. estadd local Fst ""
+
+added macro:
+                e(Fst) : ""
+
+. //
+. eststo spec2:  reg expenditure_education total_revenue rest_exp debt_at_end_of_fiscal_year, cluster(state_c
+> at)
+
+Linear regression                               Number of obs     =      1,350
+                                                F(3, 49)          =     357.91
+                                                Prob > F          =     0.0000
+                                                R-squared         =     0.9520
+                                                Root MSE          =     2.5e+06
+
+                                           (Std. err. adjusted for 50 clusters in state_cat)
+--------------------------------------------------------------------------------------------
+                           |               Robust
+     expenditure_education | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+---------------------------+----------------------------------------------------------------
+             total_revenue |    .105797   .0507933     2.08   0.043     .0037241      .20787
+                  rest_exp |   .3647573   .0700141     5.21   0.000     .2240587    .5054559
+debt_at_end_of_fiscal_year |  -.1819219   .0478915    -3.80   0.000    -.2781634   -.0856803
+                     _cons |    1072374   262919.9     4.08   0.000     544016.4     1600731
+--------------------------------------------------------------------------------------------
+
+. estadd local hasteffect "No"
+
+added macro:
+         e(hasteffect) : "No"
+
+. estadd local haseffect "No"
+
+added macro:
+          e(haseffect) : "No"
+
+. estadd local hasCSt "Yes"
+
+added macro:
+             e(hasCSt) : "Yes"
+
+. testparm rest_exp 
+
+ ( 1)  rest_exp = 0
+
+       F(  1,    49) =   27.14
+            Prob > F =    0.0000
+
+. testparm debt_at_end_of_fiscal_year
+
+ ( 1)  debt_at_end_of_fiscal_year = 0
+
+       F(  1,    49) =   14.43
+            Prob > F =    0.0004
+
+. estadd local frest "27.14"
+
+added macro:
+              e(frest) : "27.14"
+
+. estadd local frestp "(0.0000)"
+
+added macro:
+             e(frestp) : "(0.0000)"
+
+. estadd local fdebt "14.43"
+
+added macro:
+              e(fdebt) : "14.43"
+
+. estadd local fdebtp "(0.0004)"
+
+added macro:
+             e(fdebtp) : "(0.0004)"
+
+. //
+. eststo spec3:  xtreg expenditure_education total_revenue rest_exp debt_at_end_of_fiscal_year i.state_cat, f
+> e cluster(state_cat)
+note: 2.state_cat omitted because of collinearity.
+note: 3.state_cat omitted because of collinearity.
+note: 4.state_cat omitted because of collinearity.
+note: 5.state_cat omitted because of collinearity.
+note: 6.state_cat omitted because of collinearity.
+note: 7.state_cat omitted because of collinearity.
+note: 8.state_cat omitted because of collinearity.
+note: 9.state_cat omitted because of collinearity.
+note: 10.state_cat omitted because of collinearity.
+note: 11.state_cat omitted because of collinearity.
+note: 12.state_cat omitted because of collinearity.
+note: 13.state_cat omitted because of collinearity.
+note: 14.state_cat omitted because of collinearity.
+note: 15.state_cat omitted because of collinearity.
+note: 16.state_cat omitted because of collinearity.
+note: 17.state_cat omitted because of collinearity.
+note: 18.state_cat omitted because of collinearity.
+note: 19.state_cat omitted because of collinearity.
+note: 20.state_cat omitted because of collinearity.
+note: 21.state_cat omitted because of collinearity.
+note: 22.state_cat omitted because of collinearity.
+note: 23.state_cat omitted because of collinearity.
+note: 24.state_cat omitted because of collinearity.
+note: 25.state_cat omitted because of collinearity.
+note: 26.state_cat omitted because of collinearity.
+note: 27.state_cat omitted because of collinearity.
+note: 28.state_cat omitted because of collinearity.
+note: 29.state_cat omitted because of collinearity.
+note: 30.state_cat omitted because of collinearity.
+note: 31.state_cat omitted because of collinearity.
+note: 32.state_cat omitted because of collinearity.
+note: 33.state_cat omitted because of collinearity.
+note: 34.state_cat omitted because of collinearity.
+note: 35.state_cat omitted because of collinearity.
+note: 36.state_cat omitted because of collinearity.
+note: 37.state_cat omitted because of collinearity.
+note: 38.state_cat omitted because of collinearity.
+note: 39.state_cat omitted because of collinearity.
+note: 40.state_cat omitted because of collinearity.
+note: 41.state_cat omitted because of collinearity.
+note: 42.state_cat omitted because of collinearity.
+note: 43.state_cat omitted because of collinearity.
+note: 44.state_cat omitted because of collinearity.
+note: 45.state_cat omitted because of collinearity.
+note: 46.state_cat omitted because of collinearity.
+note: 47.state_cat omitted because of collinearity.
+note: 48.state_cat omitted because of collinearity.
+note: 49.state_cat omitted because of collinearity.
+note: 50.state_cat omitted because of collinearity.
+
+Fixed-effects (within) regression               Number of obs     =      1,350
+Group variable: state_cat                       Number of groups  =         50
+
+R-squared:                                      Obs per group:
+     Within  = 0.9166                                         min =         27
+     Between = 0.9344                                         avg =       27.0
+     Overall = 0.9311                                         max =         27
+
+                                                F(3, 49)          =     396.31
+corr(u_i, Xb) = 0.0374                          Prob > F          =     0.0000
+
+                                           (Std. err. adjusted for 50 clusters in state_cat)
+--------------------------------------------------------------------------------------------
+                           |               Robust
+     expenditure_education | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+---------------------------+----------------------------------------------------------------
+             total_revenue |   .0287585   .0137021     2.10   0.041     .0012231     .056294
+                  rest_exp |    .356967   .0252352    14.15   0.000      .306255    .4076789
+debt_at_end_of_fiscal_year |  -.0274916   .0291807    -0.94   0.351    -.0861325    .0311493
+                           |
+                 state_cat |
+                        2  |          0  (omitted)
+                        3  |          0  (omitted)
+                        4  |          0  (omitted)
+                        5  |          0  (omitted)
+                        6  |          0  (omitted)
+                        7  |          0  (omitted)
+                        8  |          0  (omitted)
+                        9  |          0  (omitted)
+                       10  |          0  (omitted)
+                       11  |          0  (omitted)
+                       12  |          0  (omitted)
+                       13  |          0  (omitted)
+                       14  |          0  (omitted)
+                       15  |          0  (omitted)
+                       16  |          0  (omitted)
+                       17  |          0  (omitted)
+                       18  |          0  (omitted)
+                       19  |          0  (omitted)
+                       20  |          0  (omitted)
+                       21  |          0  (omitted)
+                       22  |          0  (omitted)
+                       23  |          0  (omitted)
+                       24  |          0  (omitted)
+                       25  |          0  (omitted)
+                       26  |          0  (omitted)
+                       27  |          0  (omitted)
+                       28  |          0  (omitted)
+                       29  |          0  (omitted)
+                       30  |          0  (omitted)
+                       31  |          0  (omitted)
+                       32  |          0  (omitted)
+                       33  |          0  (omitted)
+                       34  |          0  (omitted)
+                       35  |          0  (omitted)
+                       36  |          0  (omitted)
+                       37  |          0  (omitted)
+                       38  |          0  (omitted)
+                       39  |          0  (omitted)
+                       40  |          0  (omitted)
+                       41  |          0  (omitted)
+                       42  |          0  (omitted)
+                       43  |          0  (omitted)
+                       44  |          0  (omitted)
+                       45  |          0  (omitted)
+                       46  |          0  (omitted)
+                       47  |          0  (omitted)
+                       48  |          0  (omitted)
+                       49  |          0  (omitted)
+                       50  |          0  (omitted)
+                           |
+                     _cons |    1167113   495863.7     2.35   0.023     170638.1     2163589
+---------------------------+----------------------------------------------------------------
+                   sigma_u |  2647616.3
+                   sigma_e |  1446569.8
+                       rho |  .77010945   (fraction of variance due to u_i)
+--------------------------------------------------------------------------------------------
+
+. estadd local hasteffect "No"
+
+added macro:
+         e(hasteffect) : "No"
+
+. estadd local haseffect "Yes"
+
+added macro:
+          e(haseffect) : "Yes"
+
+. estadd local hasCSt "Yes"
+
+added macro:
+             e(hasCSt) : "Yes"
+
+. testparm rest_exp 
+
+ ( 1)  rest_exp = 0
+
+       F(  1,    49) =  200.10
+            Prob > F =    0.0000
+
+. testparm debt_at_end_of_fiscal_year
+
+ ( 1)  debt_at_end_of_fiscal_year = 0
+
+       F(  1,    49) =    0.89
+            Prob > F =    0.3508
+
+. estadd local frest "200.10"
+
+added macro:
+              e(frest) : "200.10"
+
+. estadd local frestp "(0.0000)"
+
+added macro:
+             e(frestp) : "(0.0000)"
+
+. estadd local fdebt "0.89"
+
+added macro:
+              e(fdebt) : "0.89"
+
+. estadd local fdebtp "(0.3508)"
+
+added macro:
+             e(fdebtp) : "(0.3508)"
+
+. //
+. eststo spec4:  xtreg expenditure_education total_revenue rest_exp debt_at_end_of_fiscal_year i.year,fe  clu
+> ster(state_cat)
+
+Fixed-effects (within) regression               Number of obs     =      1,350
+Group variable: state_cat                       Number of groups  =         50
+
+R-squared:                                      Obs per group:
+     Within  = 0.9266                                         min =         27
+     Between = 0.9415                                         avg =       27.0
+     Overall = 0.9381                                         max =         27
+
+                                                F(29, 49)         =     499.01
+corr(u_i, Xb) = 0.2214                          Prob > F          =     0.0000
+
+                                           (Std. err. adjusted for 50 clusters in state_cat)
+--------------------------------------------------------------------------------------------
+                           |               Robust
+     expenditure_education | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+---------------------------+----------------------------------------------------------------
+             total_revenue |   .0407729   .0217872     1.87   0.067    -.0030101     .084556
+                  rest_exp |   .3334523   .0218154    15.29   0.000     .2896126     .377292
+debt_at_end_of_fiscal_year |  -.0446477    .029235    -1.53   0.133    -.1033977    .0141023
+                           |
+                      year |
+                     1993  |  -40171.26   66086.27    -0.61   0.546    -172976.6    92634.06
+                     1994  |  -48797.13   78718.92    -0.62   0.538    -206988.7    109394.5
+                     1995  |   38976.51   139788.4     0.28   0.782    -241938.8    319891.8
+                     1996  |   228001.1     161337     1.41   0.164    -96217.73      552220
+                     1997  |   274358.4   189571.5     1.45   0.154    -106599.8    655316.7
+                     1998  |   514981.4   222873.9     2.31   0.025      67099.5    962863.3
+                     1999  |   671645.2   285743.5     2.35   0.023     97422.06     1245868
+                     2000  |   788343.7   329553.9     2.39   0.021     126080.2     1450607
+                     2001  |   953152.6   276767.1     3.44   0.001     396968.3     1509337
+                     2002  |   821024.8   221529.5     3.71   0.001     375844.6     1266205
+                     2003  |   783840.6   286731.7     2.73   0.009     207631.7     1360050
+                     2004  |   818411.1     311995     2.62   0.012     191433.5     1445389
+                     2005  |   998532.9   374510.8     2.67   0.010     245925.2     1751141
+                     2006  |    1173618   412826.5     2.84   0.007     344012.1     2003224
+                     2007  |    1326942   446243.5     2.97   0.005     430181.8     2223702
+                     2008  |    1929922   363063.2     5.32   0.000      1200320     2659525
+                     2009  |    2247036   399510.6     5.62   0.000      1444189     3049882
+                     2010  |   920348.8     272415     3.38   0.001     372910.3     1467787
+                     2011  |   919740.1   304288.1     3.02   0.004     308250.2     1531230
+                     2012  |    1266875   277278.3     4.57   0.000     709663.6     1824087
+                     2013  |    1142202   351897.6     3.25   0.002     435037.5     1849367
+                     2014  |    1117709   369560.4     3.02   0.004       375050     1860369
+                     2015  |   930611.7   327634.3     2.84   0.007       272206     1589017
+                     2016  |    1743448   393541.8     4.43   0.000     952596.1     2534300
+                     2017  |    1137937   445775.8     2.55   0.014     242116.7     2033757
+                     2018  |   946747.2   457451.4     2.07   0.044     27464.19     1866030
+                           |
+                     _cons |   682740.8   416268.3     1.64   0.107    -153781.7     1519263
+---------------------------+----------------------------------------------------------------
+                   sigma_u |  2579745.6
+                   sigma_e |  1370237.7
+                       rho |  .77995656   (fraction of variance due to u_i)
+--------------------------------------------------------------------------------------------
+
+. testparm rest_exp 
+
+ ( 1)  rest_exp = 0
+
+       F(  1,    49) =  233.64
+            Prob > F =    0.0000
+
+. testparm debt_at_end_of_fiscal_year
+
+ ( 1)  debt_at_end_of_fiscal_year = 0
+
+       F(  1,    49) =    2.33
+            Prob > F =    0.1331
+
+. testparm i.year
+
+ ( 1)  1993.year = 0
+ ( 2)  1994.year = 0
+ ( 3)  1995.year = 0
+ ( 4)  1996.year = 0
+ ( 5)  1997.year = 0
+ ( 6)  1998.year = 0
+ ( 7)  1999.year = 0
+ ( 8)  2000.year = 0
+ ( 9)  2001.year = 0
+ (10)  2002.year = 0
+ (11)  2003.year = 0
+ (12)  2004.year = 0
+ (13)  2005.year = 0
+ (14)  2006.year = 0
+ (15)  2007.year = 0
+ (16)  2008.year = 0
+ (17)  2009.year = 0
+ (18)  2010.year = 0
+ (19)  2011.year = 0
+ (20)  2012.year = 0
+ (21)  2013.year = 0
+ (22)  2014.year = 0
+ (23)  2015.year = 0
+ (24)  2016.year = 0
+ (25)  2017.year = 0
+ (26)  2018.year = 0
+
+       F( 26,    49) =    4.42
+            Prob > F =    0.0000
+
+. estadd local hasteffect "Yes"
+
+added macro:
+         e(hasteffect) : "Yes"
+
+. estadd local haseffect "No"
+
+added macro:
+          e(haseffect) : "No"
+
+. estadd local hasCSt "Yes"
+
+added macro:
+             e(hasCSt) : "Yes"
+
+. estadd local ftime "4.42"
+
+added macro:
+              e(ftime) : "4.42"
+
+. estadd local ftimep "(0.0000)"
+
+added macro:
+             e(ftimep) : "(0.0000)"
+
+. estadd local frest "233.64"
+
+added macro:
+              e(frest) : "233.64"
+
+. estadd local frestp "(0.0000)"
+
+added macro:
+             e(frestp) : "(0.0000)"
+
+. estadd local fdebt "2.33"
+
+added macro:
+              e(fdebt) : "2.33"
+
+. estadd local fdebtp "(0.1331)"
+
+added macro:
+             e(fdebtp) : "(0.1331)"
+
+. //
+. eststo spec5:  xtreg expenditure_education total_revenue rest_exp debt_at_end_of_fiscal_year red_state red_
+> state_rev i.year ,fe cluster(state_cat)
+note: red_state omitted because of collinearity.
+
+Fixed-effects (within) regression               Number of obs     =      1,350
+Group variable: state_cat                       Number of groups  =         50
+
+R-squared:                                      Obs per group:
+     Within  = 0.9461                                         min =         27
+     Between = 0.9500                                         avg =       27.0
+     Overall = 0.9486                                         max =         27
+
+                                                F(30, 49)         =    2055.54
+corr(u_i, Xb) = 0.2367                          Prob > F          =     0.0000
+
+                                           (Std. err. adjusted for 50 clusters in state_cat)
+--------------------------------------------------------------------------------------------
+                           |               Robust
+     expenditure_education | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+---------------------------+----------------------------------------------------------------
+             total_revenue |    .028343   .0100399     2.82   0.007     .0081672    .0485189
+                  rest_exp |   .3189383   .0173954    18.33   0.000     .2839809    .3538956
+debt_at_end_of_fiscal_year |  -.0115029   .0165238    -0.70   0.490    -.0447088     .021703
+                 red_state |          0  (omitted)
+             red_state_rev |   .1148468   .0237269     4.84   0.000     .0671659    .1625277
+                           |
+                      year |
+                     1993  |  -69061.47   62721.13    -1.10   0.276    -195104.3    56981.35
+                     1994  |  -96212.78   92940.78    -1.04   0.306    -282984.3     90558.7
+                     1995  |  -27047.07   150053.5    -0.18   0.858    -328590.9    274496.7
+                     1996  |   132083.2   156232.9     0.85   0.402    -181878.6    446044.9
+                     1997  |   144404.1   189582.1     0.76   0.450    -236575.3    525383.5
+                     1998  |   365684.1   207440.7     1.76   0.084    -51183.61    782551.8
+                     1999  |   494420.4   266888.5     1.85   0.070    -41912.15     1030753
+                     2000  |     575634   292324.1     1.97   0.055    -11813.37     1163081
+                     2001  |   763081.3   257515.6     2.96   0.005     245584.3     1280578
+                     2002  |   626315.9   233305.4     2.68   0.010     157471.2     1095161
+                     2003  |   479520.7   291169.7     1.65   0.106    -105606.7     1064648
+                     2004  |   430971.6   296410.5     1.45   0.152    -164687.6     1026631
+                     2005  |   579738.1     340397     1.70   0.095    -104315.2     1263791
+                     2006  |   685172.7   380925.6     1.80   0.078    -80325.99     1450671
+                     2007  |   746630.1   395948.3     1.89   0.065    -49057.71     1542318
+                     2008  |    1389618   342331.8     4.06   0.000       701677     2077560
+                     2009  |    1711351   335786.4     5.10   0.000      1036563     2386139
+                     2010  |   260201.5   288956.9     0.90   0.372    -320479.2    840882.2
+                     2011  |   189382.5   333614.3     0.57   0.573    -481040.6    859805.5
+                     2012  |   563329.4   312764.9     1.80   0.078    -65195.16     1191854
+                     2013  |   408042.8   351632.4     1.16   0.251      -298589     1114675
+                     2014  |   336044.7   368787.1     0.91   0.367    -405060.8     1077150
+                     2015  |   269386.5   342884.8     0.79   0.436    -419666.3    958439.2
+                     2016  |    1067532   364478.5     2.93   0.005     335085.4     1799979
+                     2017  |   389761.1   420424.5     0.93   0.358    -455113.4     1234636
+                     2018  |   189135.5   449008.1     0.42   0.675      -713180     1091451
+                           |
+                     _cons |     369134   286565.5     1.29   0.204      -206741      945009
+---------------------------+----------------------------------------------------------------
+                   sigma_u |  2395874.4
+                   sigma_e |    1174615
+                       rho |  .80621727   (fraction of variance due to u_i)
+--------------------------------------------------------------------------------------------
+
+. testparm rest_exp 
+
+ ( 1)  rest_exp = 0
+
+       F(  1,    49) =  336.16
+            Prob > F =    0.0000
+
+. testparm debt_at_end_of_fiscal_year
+
+ ( 1)  debt_at_end_of_fiscal_year = 0
+
+       F(  1,    49) =    0.48
+            Prob > F =    0.4896
+
+. testparm i.year
+
+ ( 1)  1993.year = 0
+ ( 2)  1994.year = 0
+ ( 3)  1995.year = 0
+ ( 4)  1996.year = 0
+ ( 5)  1997.year = 0
+ ( 6)  1998.year = 0
+ ( 7)  1999.year = 0
+ ( 8)  2000.year = 0
+ ( 9)  2001.year = 0
+ (10)  2002.year = 0
+ (11)  2003.year = 0
+ (12)  2004.year = 0
+ (13)  2005.year = 0
+ (14)  2006.year = 0
+ (15)  2007.year = 0
+ (16)  2008.year = 0
+ (17)  2009.year = 0
+ (18)  2010.year = 0
+ (19)  2011.year = 0
+ (20)  2012.year = 0
+ (21)  2013.year = 0
+ (22)  2014.year = 0
+ (23)  2015.year = 0
+ (24)  2016.year = 0
+ (25)  2017.year = 0
+ (26)  2018.year = 0
+
+       F( 26,    49) =    5.57
+            Prob > F =    0.0000
+
+. estadd local hasteffect "Yes"
+
+added macro:
+         e(hasteffect) : "Yes"
+
+. estadd local haseffect "No"
+
+added macro:
+          e(haseffect) : "No"
+
+. estadd local hasCSt "Yes"
+
+added macro:
+             e(hasCSt) : "Yes"
+
+. estadd local ftime "5.57"
+
+added macro:
+              e(ftime) : "5.57"
+
+. estadd local ftimep "(0.0000)"
+
+added macro:
+             e(ftimep) : "(0.0000)"
+
+. estadd local frest "336.16"
+
+added macro:
+              e(frest) : "336.16"
+
+. estadd local frestp "(0.0000)"
+
+added macro:
+             e(frestp) : "(0.0000)"
+
+. estadd local fdebt "0.48"
+
+added macro:
+              e(fdebt) : "0.48"
+
+. estadd local fdebtp "(0.4896)"
+
+added macro:
+             e(fdebtp) : "(0.4896)"
+
+. 
+. //
+. eststo spec6: xtreg expenditure_public_welfare total_revenue rest_exp_welfare debt_at_end_of_fiscal_year i.
+> year, fe cluster(state_cat)
+
+Fixed-effects (within) regression               Number of obs     =      1,350
+Group variable: state_cat                       Number of groups  =         50
+
+R-squared:                                      Obs per group:
+     Within  = 0.8882                                         min =         27
+     Between = 0.9807                                         avg =       27.0
+     Overall = 0.9517                                         max =         27
+
+                                                F(29, 49)         =    1862.38
+corr(u_i, Xb) = -0.7600                         Prob > F          =     0.0000
+
+                                           (Std. err. adjusted for 50 clusters in state_cat)
+--------------------------------------------------------------------------------------------
+                           |               Robust
+expenditure_public_welfare | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+---------------------------+----------------------------------------------------------------
+             total_revenue |   .1532625   .0159708     9.60   0.000      .121168     .185357
+          rest_exp_welfare |   .2370507    .055004     4.31   0.000      .126516    .3475855
+debt_at_end_of_fiscal_year |   .0101212   .0547355     0.18   0.854    -.0998739    .1201163
+                           |
+                      year |
+                     1993  |  -70642.62   67766.11    -1.04   0.302    -206823.7    65538.47
+                     1994  |   44151.32   74972.85     0.59   0.559    -106512.3    194814.9
+                     1995  |    -169634   119193.6    -1.42   0.161    -409162.5    69894.42
+                     1996  |    -453685     151747    -2.99   0.004      -758632     -148738
+                     1997  |  -652568.6   212036.5    -3.08   0.003     -1078672   -226465.3
+                     1998  |  -887967.7   272791.6    -3.26   0.002     -1436163   -339772.3
+                     1999  |   -1064614   331558.1    -3.21   0.002     -1730905     -398323
+                     2000  |   -1371062   421996.2    -3.25   0.002     -2219095   -523028.5
+                     2001  |   -1020819     524983    -1.94   0.058     -2075812    34173.82
+                     2002  |  -599607.2     383664    -1.56   0.125     -1370609    171394.4
+                     2003  |  -943398.9   534121.9    -1.77   0.084     -2016757    129959.2
+                     2004  |   -1427003   680456.6    -2.10   0.041     -2794432   -59574.42
+                     2005  |   -1222515   659136.5    -1.85   0.070     -2547099    102069.3
+                     2006  |   -1832668   792616.8    -2.31   0.025     -3425491   -239844.9
+                     2007  |   -2506122   909153.7    -2.76   0.008     -4333134   -679108.9
+                     2008  |   -1271875   490753.1    -2.59   0.013     -2258080   -285669.6
+                     2009  |   313978.5   240729.1     1.30   0.198    -169784.8    797741.7
+                     2010  |   -2418011   866465.5    -2.79   0.007     -4159239   -676783.8
+                     2011  |   -2612891   884216.1    -2.96   0.005     -4389790   -835992.6
+                     2012  |   -1530947   639528.7    -2.39   0.021     -2816128   -245765.6
+                     2013  |   -1794465   740597.2    -2.42   0.019     -3282751   -306179.4
+                     2014  |   -1887015   810982.5    -2.33   0.024     -3516746   -257285.1
+                     2015  |  -477125.9   420176.6    -1.14   0.262     -1321502    367250.6
+                     2016  |   240544.9   468240.2     0.51   0.610    -700419.1     1181509
+                     2017  |  -462905.6   565159.4    -0.82   0.417     -1598636    672824.7
+                     2018  |  -163250.2     482567    -0.34   0.737     -1133005    806504.5
+                           |
+                     _cons |   -1833929   404866.8    -4.53   0.000     -2647539    -1020319
+---------------------------+----------------------------------------------------------------
+                   sigma_u |  2566115.7
+                   sigma_e |  2011039.7
+                       rho |  .61951332   (fraction of variance due to u_i)
+--------------------------------------------------------------------------------------------
+
+. testparm rest_exp_welfare
+
+ ( 1)  rest_exp_welfare = 0
+
+       F(  1,    49) =   18.57
+            Prob > F =    0.0001
+
+. testparm debt_at_end_of_fiscal_year
+
+ ( 1)  debt_at_end_of_fiscal_year = 0
+
+       F(  1,    49) =    0.03
+            Prob > F =    0.8541
+
+. testparm i.year
+
+ ( 1)  1993.year = 0
+ ( 2)  1994.year = 0
+ ( 3)  1995.year = 0
+ ( 4)  1996.year = 0
+ ( 5)  1997.year = 0
+ ( 6)  1998.year = 0
+ ( 7)  1999.year = 0
+ ( 8)  2000.year = 0
+ ( 9)  2001.year = 0
+ (10)  2002.year = 0
+ (11)  2003.year = 0
+ (12)  2004.year = 0
+ (13)  2005.year = 0
+ (14)  2006.year = 0
+ (15)  2007.year = 0
+ (16)  2008.year = 0
+ (17)  2009.year = 0
+ (18)  2010.year = 0
+ (19)  2011.year = 0
+ (20)  2012.year = 0
+ (21)  2013.year = 0
+ (22)  2014.year = 0
+ (23)  2015.year = 0
+ (24)  2016.year = 0
+ (25)  2017.year = 0
+ (26)  2018.year = 0
+
+       F( 26,    49) =    7.21
+            Prob > F =    0.0000
+
+. estadd local hasteffect "Yes"
+
+added macro:
+         e(hasteffect) : "Yes"
+
+. estadd local haseffect "No"
+
+added macro:
+          e(haseffect) : "No"
+
+. estadd local hasCSt "Yes"
+
+added macro:
+             e(hasCSt) : "Yes"
+
+. estadd local ftime "7.21"
+
+added macro:
+              e(ftime) : "7.21"
+
+. estadd local ftimep "(0.0000)"
+
+added macro:
+             e(ftimep) : "(0.0000)"
+
+. estadd local frest "18.57"
+
+added macro:
+              e(frest) : "18.57"
+
+. estadd local frestp "(0.0001)"
+
+added macro:
+             e(frestp) : "(0.0001)"
+
+. estadd local fdebt "0.03"
+
+added macro:
+              e(fdebt) : "0.03"
+
+. estadd local fdebtp "(0.8541)"
+
+added macro:
+             e(fdebtp) : "(0.8541)"
+
+. 
+. esttab using eco375_table2.rtf, drop(2.state_cat 3.state_cat 4.state_cat 5.state_cat 6.state_cat 7.state_ca
+> t 8.state_cat 9.state_cat 10.state_cat 11.state_cat 12.state_cat 13.state_cat 14.state_cat 15.state_cat 16.
+> state_cat 17.state_cat 18.state_cat 19.state_cat 20.state_cat 21.state_cat 22.state_cat 23.state_cat 24.sta
+> te_cat 25.state_cat 26.state_cat 27.state_cat 28.state_cat 29.state_cat 30.state_cat 31.state_cat 32.state_
+> cat 33.state_cat 34.state_cat 35.state_cat 36.state_cat 37.state_cat 38.state_cat 39.state_cat 40.state_cat
+>  41.state_cat 42.state_cat 43.state_cat 44.state_cat 45.state_cat 46.state_cat 47.state_cat 48.state_cat 49
+> .state_cat 50.state_cat  1993.year 1994.year 1995.year 1996.year 1997.year 1998.year 1999.year 2000.year 20
+> 01.year 2002.year 2003.year 2004.year 2005.year 2006.year 2007.year 2008.year 2009.year 2010.year 2011.year
+>  2012.year 2013.year 2014.year 2015.year 2016.year 2017.year 2018.year red_state) wrap se scalars("haseffec
+> t State effects" "hasteffect Time effects" "hasCSt Clustered standared errors""Fst F-statistics & p-values:
+>  " "ftime Time effects" "ftimep  ." "frest Rest expenditure" "frestp ." "fdebt Debt" "fdebtp .") rename(tot
+> al_revenue "Total Revenue" rest_exp "Expenditure w/o education" debt_at_end_of_fiscal_year "Debt at the end
+>  of fiscal year" red_state_rev "RedState*Total Revenue" rest_exp_welfare "Expenditure w/o welfare" ) r2 obs
+> last nobaselevels addnotes("") replace
+(output written to eco375_table2.rtf)
+
+. 
+.  table ( var ) () (), statistic(mean total_revenue expenditure_education expenditure_public_welfare rest_ex
+> p rest_exp_welfare debt_at_end_of_fiscal_year ) statistic(sd  expenditure_education total_revenue rest_exp 
+> rest_exp_welfare debt_at_end_of_fiscal_year ) statistic(min expenditure_education total_revenue rest_exp re
+> st_exp_welfare debt_at_end_of_fiscal_year ) statistic(max expenditure_education total_revenue rest_exp rest
+> _exp_welfare debt_at_end_of_fiscal_year ) statistic(frequency) nformat(%12.0g)
+
+----------------------------------------------------------------------------------------------------------
+                           |         Mean   Standard deviation   Minimum value   Maximum value   Frequency
+---------------------------+------------------------------------------------------------------------------
+                           |                                                                          1350
+total_revenue              |   31403556.1          42167342.34         1756015       412385628            
+expenditure_education      |  9079465.941          11347863.25          430517       102372367            
+expenditure_public_welfare |  7494494.136                                                                 
+rest_exp                   |  20875871.82          28732014.97         1134365       272719936            
+rest_exp_welfare           |   22460843.6          28392053.98         1274427       233793472            
+debt_at_end_of_fiscal_year |  16105473.74          23361818.45          485787       156807868            
+----------------------------------------------------------------------------------------------------------
+
+. 
+.  collect label levels var total_revenue "Total revenue" expenditure_education "Education expenditure" expen
+> diture_public_welfare "Public Welfare expenditure" rest_exp "Expenditure excluding education expenditure" r
+> est_exp_welfare "Expenditure excluding public welfare expenditure" debt_at_end_of_fiscal_year "Debt at the 
+> end of the fiscal year", modify
+
+. collect export "eco375_table1", as(docx) replace
+(collection Table exported to file eco375_table1.docx)
+
+. 
+. 
+. 
+. 
+. log close
+      name:  <unnamed>
+       log:  /Users/unubatsuuri/Desktop/eco375_project/Group20.log
+  log type:  text
+ closed on:  28 Nov 2023, 23:01:30
+-------------------------------------------------------------------------------------------------------------
